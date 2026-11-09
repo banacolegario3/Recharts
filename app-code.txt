@@ -1,0 +1,155 @@
+﻿===== C:\Users\Student\Desktop\My-First-Laravel555\app\Http\Controllers\Controller.php =====
+<?php
+
+namespace App\Http\Controllers;
+
+abstract class Controller
+{
+    //
+}
+
+===== C:\Users\Student\Desktop\My-First-Laravel555\app\Http\Middleware\HandleInertiaRequests.php =====
+<?php
+
+namespace App\Http\Middleware;
+
+use Illuminate\Http\Request;
+use Inertia\Middleware;
+
+class HandleInertiaRequests extends Middleware
+{
+    /**
+     * The root template that's loaded on the first page visit.
+     *
+     * @see https://inertiajs.com/server-side-setup#root-template
+     *
+     * @var string
+     */
+    protected $rootView = 'app';
+
+    /**
+     * Determines the current asset version.
+     *
+     * @see https://inertiajs.com/asset-versioning
+     */
+    public function version(Request $request): ?string
+    {
+        return parent::version($request);
+    }
+
+    /**
+     * Define the props that are shared by default.
+     *
+     * @see https://inertiajs.com/shared-data
+     *
+     * @return array<string, mixed>
+     */
+    public function share(Request $request): array
+    {
+        return [
+            ...parent::share($request),
+            'name' => config('app.name'),
+            'auth' => [
+                'user' => $request->user(),
+            ],
+        ];
+    }
+}
+
+===== C:\Users\Student\Desktop\My-First-Laravel555\app\Models\User.php =====
+<?php
+
+namespace App\Models;
+
+// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Carbon;
+
+/**
+ * @property int $id
+ * @property string $name
+ * @property string $email
+ * @property Carbon|null $email_verified_at
+ * @property string $password
+ * @property string|null $remember_token
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ */
+#[Fillable(['name', 'email', 'password'])]
+#[Hidden(['password', 'remember_token'])]
+class User extends Authenticatable
+{
+    /** @use HasFactory<UserFactory> */
+    use HasFactory, Notifiable;
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+        ];
+    }
+}
+
+===== C:\Users\Student\Desktop\My-First-Laravel555\app\Providers\AppServiceProvider.php =====
+<?php
+
+namespace App\Providers;
+
+use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\ServiceProvider;
+use Illuminate\Validation\Rules\Password;
+
+class AppServiceProvider extends ServiceProvider
+{
+    /**
+     * Register any application services.
+     */
+    public function register(): void
+    {
+        //
+    }
+
+    /**
+     * Bootstrap any application services.
+     */
+    public function boot(): void
+    {
+        $this->configureDefaults();
+    }
+
+    /**
+     * Configure default behaviors for production-ready applications.
+     */
+    protected function configureDefaults(): void
+    {
+        Date::use(CarbonImmutable::class);
+
+        DB::prohibitDestructiveCommands(
+            app()->isProduction(),
+        );
+
+        Password::defaults(fn (): ?Password => app()->isProduction()
+            ? Password::min(12)
+                ->mixedCase()
+                ->letters()
+                ->numbers()
+                ->symbols()
+                ->uncompromised()
+            : null,
+        );
+    }
+}
+
